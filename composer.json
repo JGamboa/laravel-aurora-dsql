@@ -1,6 +1,6 @@
 {
     "name": "jgamboa/laravel-aurora-dsql",
-    "description": "Driver de Laravel para Amazon Aurora DSQL: conexión con token IAM, schema builder compatible (PK/FK inline, índices ASYNC, identity) y helpers de migración.",
+    "description": "Laravel driver for Amazon Aurora DSQL: IAM token auth, DSQL-compatible schema builder (inline PK/FK, ASYNC indexes, identity) and migration helpers.",
     "type": "library",
     "license": "MIT",
     "keywords": ["laravel", "aurora", "dsql", "aws", "postgres"],

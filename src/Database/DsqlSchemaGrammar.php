@@ -8,27 +8,28 @@ use Illuminate\Support\Fluent;
 use RuntimeException;
 
 /**
- * Grammar de schema para Aurora DSQL.
+ * Schema grammar for Aurora DSQL.
  *
- * Diferencias con PostgreSQL que resuelve (verificadas contra un cluster):
- *  - PK y FK solo pueden ir inline en el CREATE TABLE (no hay ALTER TABLE ADD
- *    PRIMARY KEY / ADD CONSTRAINT): se agregan como constraints de tabla en
- *    compileCreate() y se suprimen los comandos ALTER separados.
- *  - Solo CREATE [UNIQUE] INDEX ASYNC.
- *  - No existe SERIAL; IDENTITY debe ser bigint y con CACHE >= 65536.
- *  - Una sola sentencia DDL por transaccion: sin transacciones de schema.
- *  - pg_total_relation_size no esta soportado (listado de tablas).
+ * PostgreSQL differences it handles (verified against a live cluster):
+ *  - Primary and foreign keys can only be declared inline in CREATE TABLE
+ *    (no ALTER TABLE ADD PRIMARY KEY / ADD CONSTRAINT): they are emitted as
+ *    table constraints in compileCreate() and the separate ALTERs are dropped.
+ *  - Only CREATE [UNIQUE] INDEX ASYNC is supported.
+ *  - There is no SERIAL; IDENTITY columns must be bigint with CACHE >= 65536.
+ *  - One DDL statement per transaction: no schema transactions.
+ *  - pg_total_relation_size is not supported (table listing).
  */
 class DsqlSchemaGrammar extends PostgresGrammar
 {
     /**
-     * DSQL permite una sola sentencia DDL por transaccion y no mezcla DDL con
-     * DML, asi que el Migrator no debe envolver las migraciones en una.
+     * DSQL allows a single DDL statement per transaction and cannot mix DDL
+     * with DML, so the Migrator must not wrap migrations in a transaction.
      */
     protected $transactions = false;
 
     /**
-     * CREATE TABLE con la PK y las FKs del blueprint como constraints inline.
+     * CREATE TABLE with the blueprint's primary and foreign keys as inline
+     * table constraints.
      */
     public function compileCreate(Blueprint $blueprint, Fluent $command)
     {
@@ -54,7 +55,7 @@ class DsqlSchemaGrammar extends PostgresGrammar
         );
     }
 
-    /** La PK va inline en compileCreate(); DSQL no permite agregarla despues. */
+    /** The primary key is inlined by compileCreate(); DSQL cannot add it later. */
     public function compilePrimary(Blueprint $blueprint, Fluent $command)
     {
         if ($blueprint->creating()) {
@@ -62,11 +63,11 @@ class DsqlSchemaGrammar extends PostgresGrammar
         }
 
         throw new RuntimeException(
-            'Aurora DSQL no permite agregar una PRIMARY KEY a una tabla existente; definila en Schema::create().'
+            'Aurora DSQL does not support adding a PRIMARY KEY to an existing table; declare it in Schema::create().'
         );
     }
 
-    /** Las FKs van inline en compileCreate(); DSQL no permite agregarlas despues. */
+    /** Foreign keys are inlined by compileCreate(); DSQL cannot add them later. */
     public function compileForeign(Blueprint $blueprint, Fluent $command)
     {
         if ($blueprint->creating()) {
@@ -74,13 +75,13 @@ class DsqlSchemaGrammar extends PostgresGrammar
         }
 
         throw new RuntimeException(
-            'Aurora DSQL no permite agregar una FOREIGN KEY a una tabla existente; definila en Schema::create().'
+            'Aurora DSQL does not support adding a FOREIGN KEY to an existing table; declare it in Schema::create().'
         );
     }
 
     /**
-     * "constraint x foreign key (...) references ..." a partir del ALTER que
-     * genera PostgresGrammar (reutiliza on delete/update, deferrable, etc.).
+     * "constraint x foreign key (...) references ..." derived from the ALTER
+     * produced by PostgresGrammar (reuses on delete/update, deferrable, etc.).
      */
     protected function compileInlineForeign(Blueprint $blueprint, Fluent $command): string
     {
@@ -90,7 +91,7 @@ class DsqlSchemaGrammar extends PostgresGrammar
         return substr($sql, strlen($prefix));
     }
 
-    /** Indice simple/compuesto -> CREATE INDEX ASYNC */
+    /** Plain/composite index -> CREATE INDEX ASYNC */
     public function compileIndex(Blueprint $blueprint, Fluent $command)
     {
         return sprintf('create index async %s on %s%s (%s)',
@@ -101,7 +102,7 @@ class DsqlSchemaGrammar extends PostgresGrammar
         );
     }
 
-    /** Unico (incl. compuesto) -> CREATE UNIQUE INDEX ASYNC */
+    /** Unique (incl. composite) -> CREATE UNIQUE INDEX ASYNC */
     public function compileUnique(Blueprint $blueprint, Fluent $command)
     {
         return sprintf('create unique index async %s on %s%s (%s)',
@@ -113,9 +114,9 @@ class DsqlSchemaGrammar extends PostgresGrammar
     }
 
     /**
-     * DSQL no soporta pg_total_relation_size (y pg_relation_size devuelve 0),
-     * asi que el listado de tablas va sin tamano. Lo usan Schema::getTables(),
-     * db:show, db:wipe y migrate:fresh.
+     * DSQL does not support pg_total_relation_size (and pg_relation_size
+     * returns 0), so tables are listed without a size. Used by
+     * Schema::getTables(), db:show, db:wipe and migrate:fresh.
      */
     public function compileTables($schema)
     {
@@ -127,10 +128,10 @@ class DsqlSchemaGrammar extends PostgresGrammar
     }
 
     /*
-     * Auto-increment: DSQL no tiene 'serial'. Toda columna autoIncrement pasa a
-     * bigint IDENTITY con CACHE 65536 ($table->id(), increments(), y la tabla
-     * 'migrations' de Laravel). La PK de esas columnas ya sale inline: el
-     * modifyIncrement() de PostgresGrammar agrega ' primary key' a la columna.
+     * Auto-increment: DSQL has no 'serial'. Every autoIncrement column becomes
+     * a bigint IDENTITY with CACHE 65536 ($table->id(), increments(), and
+     * Laravel's own 'migrations' table). Its primary key is already inline:
+     * PostgresGrammar::modifyIncrement() appends ' primary key' to the column.
      */
 
     protected function typeInteger(Fluent $column)

@@ -7,12 +7,12 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Base opcional para migraciones DSQL escritas con SQL crudo.
+ * Optional base class for DSQL migrations written in raw SQL.
  *
- * Con el driver 'dsql' tambien se puede usar el schema builder normal; esta
- * base es para lo que el builder no cubre. Cada statement hace autocommit
- * (DSQL: una DDL por transaccion), asi que si una migracion falla a mitad
- * queda aplicada a medias: escribir up()/down() con IF [NOT] EXISTS.
+ * The regular schema builder works with the 'dsql' driver; use this for what
+ * the builder does not cover. Every statement autocommits (DSQL allows one DDL
+ * per transaction), so a migration that fails midway stays partially applied:
+ * write up()/down() with IF [NOT] EXISTS.
  */
 abstract class DsqlMigration extends Migration
 {
@@ -25,15 +25,15 @@ abstract class DsqlMigration extends Migration
         return DB::connection($this->connection);
     }
 
-    /** Ejecuta una sentencia DDL (una por llamada; autocommit). */
+    /** Runs a single DDL statement (one per call; autocommit). */
     protected function ddl(string $sql): void
     {
         $this->db()->statement($sql);
     }
 
     /**
-     * Ejecuta un CREATE [UNIQUE] INDEX ASYNC. DsqlConnection espera a que el
-     * job de construccion termine salvo 'wait_for_indexes' => false.
+     * Runs a CREATE [UNIQUE] INDEX ASYNC. DsqlConnection waits for the build
+     * job to finish unless 'wait_for_indexes' => false.
      */
     protected function createIndexAsync(string $sql): void
     {

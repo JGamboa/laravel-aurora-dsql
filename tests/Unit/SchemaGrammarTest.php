@@ -16,9 +16,9 @@ class SchemaGrammarTest extends TestCase
     {
         parent::setUp();
 
-        // PDO lazy que nunca se resuelve: con pretend() no se toca la red.
+        // Lazy PDO that is never resolved: pretend() never touches the network.
         $this->connection = new DsqlConnection(
-            fn () => throw new RuntimeException('sin PDO en tests unitarios'),
+            fn () => throw new RuntimeException('no PDO in unit tests'),
             'postgres', '', ['name' => 'dsql', 'prefix_indexes' => true]
         );
         $this->connection->useDefaultSchemaGrammar();
@@ -34,52 +34,52 @@ class SchemaGrammarTest extends TestCase
     }
 
     #[Test]
-    public function uuid_primary_key_va_inline_en_el_create(): void
+    public function uuid_primary_key_is_inlined_in_create_table(): void
     {
-        $sql = $this->sql(fn ($s) => $s->create('categorias', function (Blueprint $t) {
+        $sql = $this->sql(fn ($s) => $s->create('categories', function (Blueprint $t) {
             $t->uuid('id')->primary();
-            $t->string('nombre');
+            $t->string('name');
         }));
 
         $this->assertSame(
-            ['create table "categorias" ("id" uuid not null, "nombre" varchar(255) not null, primary key ("id"))'],
+            ['create table "categories" ("id" uuid not null, "name" varchar(255) not null, primary key ("id"))'],
             $sql
         );
     }
 
     #[Test]
-    public function primary_compuesta_inline(): void
+    public function composite_primary_key_is_inlined(): void
     {
-        $sql = $this->sql(fn ($s) => $s->create('pivote', function (Blueprint $t) {
+        $sql = $this->sql(fn ($s) => $s->create('pivot', function (Blueprint $t) {
             $t->uuid('a_id');
             $t->uuid('b_id');
             $t->primary(['a_id', 'b_id']);
         }));
 
-        $this->assertSame(['create table "pivote" ("a_id" uuid not null, "b_id" uuid not null, primary key ("a_id", "b_id"))'], $sql);
+        $this->assertSame(['create table "pivot" ("a_id" uuid not null, "b_id" uuid not null, primary key ("a_id", "b_id"))'], $sql);
     }
 
     #[Test]
-    public function foreign_keys_van_inline_y_los_indices_como_async(): void
+    public function foreign_keys_are_inlined_and_indexes_are_async(): void
     {
-        $sql = $this->sql(fn ($s) => $s->create('productos', function (Blueprint $t) {
+        $sql = $this->sql(fn ($s) => $s->create('products', function (Blueprint $t) {
             $t->uuid('id')->primary();
-            $t->foreignUuid('categoria_id')->constrained()->cascadeOnDelete();
+            $t->foreignUuid('category_id')->constrained()->cascadeOnDelete();
             $t->string('sku')->unique();
-            $t->index(['categoria_id', 'sku']);
+            $t->index(['category_id', 'sku']);
         }));
 
         $this->assertSame([
-            'create table "productos" ("id" uuid not null, "categoria_id" uuid not null, "sku" varchar(255) not null, '
-                .'primary key ("id"), constraint "productos_categoria_id_foreign" foreign key ("categoria_id") '
-                .'references "categorias" ("id") on delete cascade)',
-            'create index async "productos_categoria_id_sku_index" on "productos" ("categoria_id", "sku")',
-            'create unique index async "productos_sku_unique" on "productos" ("sku")',
+            'create table "products" ("id" uuid not null, "category_id" uuid not null, "sku" varchar(255) not null, '
+                .'primary key ("id"), constraint "products_category_id_foreign" foreign key ("category_id") '
+                .'references "categories" ("id") on delete cascade)',
+            'create index async "products_category_id_sku_index" on "products" ("category_id", "sku")',
+            'create unique index async "products_sku_unique" on "products" ("sku")',
         ], $sql);
     }
 
     #[Test]
-    public function id_autoincremental_es_bigint_identity_con_cache(): void
+    public function auto_increment_id_is_bigint_identity_with_cache(): void
     {
         $sql = $this->sql(fn ($s) => $s->create('migrations', function (Blueprint $t) {
             $t->increments('id');
@@ -93,39 +93,39 @@ class SchemaGrammarTest extends TestCase
     }
 
     #[Test]
-    public function agregar_foreign_a_tabla_existente_falla_con_mensaje_claro(): void
+    public function adding_foreign_key_to_existing_table_throws_clear_error(): void
     {
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('FOREIGN KEY a una tabla existente');
+        $this->expectExceptionMessage('FOREIGN KEY to an existing table');
 
-        $this->sql(fn ($s) => $s->table('productos', fn (Blueprint $t) => $t->foreignUuid('otro_id')->constrained('categorias')));
+        $this->sql(fn ($s) => $s->table('products', fn (Blueprint $t) => $t->foreignUuid('other_id')->constrained('categories')));
     }
 
     #[Test]
-    public function agregar_primary_a_tabla_existente_falla_con_mensaje_claro(): void
+    public function adding_primary_key_to_existing_table_throws_clear_error(): void
     {
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('PRIMARY KEY a una tabla existente');
+        $this->expectExceptionMessage('PRIMARY KEY to an existing table');
 
-        $this->sql(fn ($s) => $s->table('productos', fn (Blueprint $t) => $t->primary('id')));
+        $this->sql(fn ($s) => $s->table('products', fn (Blueprint $t) => $t->primary('id')));
     }
 
     #[Test]
-    public function agregar_columna_nullable_a_tabla_existente(): void
+    public function adding_nullable_column_to_existing_table(): void
     {
-        $sql = $this->sql(fn ($s) => $s->table('productos', fn (Blueprint $t) => $t->string('notas')->nullable()));
+        $sql = $this->sql(fn ($s) => $s->table('products', fn (Blueprint $t) => $t->string('notes')->nullable()));
 
-        $this->assertSame(['alter table "productos" add column "notas" varchar(255) null'], $sql);
+        $this->assertSame(['alter table "products" add column "notes" varchar(255) null'], $sql);
     }
 
     #[Test]
-    public function sin_transacciones_de_schema(): void
+    public function schema_transactions_are_disabled(): void
     {
         $this->assertFalse($this->connection->getSchemaGrammar()->supportsSchemaTransactions());
     }
 
     #[Test]
-    public function listado_de_tablas_sin_pg_total_relation_size(): void
+    public function table_listing_does_not_use_pg_total_relation_size(): void
     {
         $sql = $this->connection->getSchemaGrammar()->compileTables('public');
 

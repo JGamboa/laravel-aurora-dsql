@@ -13,34 +13,34 @@ use JGamboa\LaravelAuroraDsql\DsqlServiceProvider;
 use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 
-class ItCategoria extends Model
+class ItCategory extends Model
 {
     use HasUuids;
 
     protected $connection = 'dsql';
-    protected $table = 'it_categorias';
+    protected $table = 'it_categories';
     protected $guarded = [];
 }
 
-class ItProducto extends Model
+class ItProduct extends Model
 {
     use HasUuids;
 
     protected $connection = 'dsql';
-    protected $table = 'it_productos';
+    protected $table = 'it_products';
     protected $guarded = [];
 }
 
 /**
- * Contra un cluster real. Requiere DSQL_HOST (y DSQL_PROFILE si se usa SSO):
- *   DSQL_HOST=xxx.dsql.us-east-1.on.aws DSQL_PROFILE=mi-perfil vendor/bin/phpunit --testsuite Integration
+ * Runs against a live cluster. Requires DSQL_HOST (and DSQL_PROFILE for SSO):
+ *   DSQL_HOST=xxx.dsql.us-east-1.on.aws DSQL_PROFILE=my-profile vendor/bin/phpunit --testsuite Integration
  */
 class SchemaBuilderTest extends TestCase
 {
     protected function setUp(): void
     {
         if (! getenv('DSQL_HOST')) {
-            $this->markTestSkipped('DSQL_HOST no definido.');
+            $this->markTestSkipped('DSQL_HOST is not set.');
         }
 
         parent::setUp();
@@ -69,8 +69,8 @@ class SchemaBuilderTest extends TestCase
     protected function tearDown(): void
     {
         if ($this->app) {
-            Schema::connection('dsql')->dropIfExists('it_productos');
-            Schema::connection('dsql')->dropIfExists('it_categorias');
+            Schema::connection('dsql')->dropIfExists('it_products');
+            Schema::connection('dsql')->dropIfExists('it_categories');
             DB::connection('dsql')->table('migrations')->where('migration', 'like', '%create_it_tables')->delete();
         }
 
@@ -78,7 +78,7 @@ class SchemaBuilderTest extends TestCase
     }
 
     #[Test]
-    public function migracion_con_schema_builder_y_eloquent_end_to_end(): void
+    public function schema_builder_migration_and_eloquent_end_to_end(): void
     {
         $this->artisan('migrate', [
             '--database' => 'dsql',
@@ -87,34 +87,34 @@ class SchemaBuilderTest extends TestCase
         ])->assertSuccessful();
 
         $schema = Schema::connection('dsql');
-        $this->assertTrue($schema->hasTable('it_productos'));
+        $this->assertTrue($schema->hasTable('it_products'));
 
-        $pk = collect($schema->getIndexes('it_productos'))->firstWhere('primary', true);
+        $pk = collect($schema->getIndexes('it_products'))->firstWhere('primary', true);
         $this->assertSame('id', $pk['columns'][0]);
-        $this->assertCount(1, $schema->getForeignKeys('it_productos'));
+        $this->assertCount(1, $schema->getForeignKeys('it_products'));
 
-        // Eloquent + HasUuids (v7) + default inline
-        $cat = ItCategoria::create(['nombre' => 'cat-'.Str::random(6)]);
+        // Eloquent + HasUuids (v7) + inline default
+        $cat = ItCategory::create(['name' => 'cat-'.Str::random(6)]);
         $this->assertSame('7', Str::replace('-', '', $cat->id)[12]);
-        $prod = ItProducto::create(['categoria_id' => $cat->id, 'sku' => 'A']);
-        $this->assertSame(0, (int) $prod->fresh()->precio);
+        $prod = ItProduct::create(['category_id' => $cat->id, 'sku' => 'A']);
+        $this->assertSame(0, (int) $prod->fresh()->price);
 
-        // FK se hace cumplir
+        // the foreign key is enforced
         try {
-            ItProducto::create(['categoria_id' => (string) Str::uuid7(), 'sku' => 'X']);
-            $this->fail('La FK no se hizo cumplir');
+            ItProduct::create(['category_id' => (string) Str::uuid7(), 'sku' => 'X']);
+            $this->fail('The foreign key was not enforced');
         } catch (QueryException $e) {
             $this->assertSame('23503', $e->getCode());
         }
 
-        // unique (index ASYNC, ya construido porque la conexion espera el job)
+        // unique (ASYNC index, already built because the connection waits for the job)
         $this->expectException(UniqueConstraintViolationException::class);
         try {
-            ItCategoria::create(['nombre' => $cat->nombre]);
+            ItCategory::create(['name' => $cat->name]);
         } finally {
             // on delete cascade
             $cat->delete();
-            $this->assertSame(0, ItProducto::count());
+            $this->assertSame(0, ItProduct::count());
         }
     }
 }

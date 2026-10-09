@@ -9,26 +9,26 @@ use Illuminate\Support\ServiceProvider;
 use JGamboa\LaravelAuroraDsql\Database\DsqlConnection;
 
 /**
- * Registra el driver de base "dsql".
+ * Registers the "dsql" database driver.
  *
- * El PDO lo genera el conector oficial de AWS (token IAM + SSL verify-full) y
- * se envuelve en una DsqlConnection (grammar compatible con DSQL).
+ * The PDO is created by the official AWS connector (IAM token + SSL
+ * verify-full) and wrapped in a DsqlConnection (DSQL-compatible grammar).
  */
 class DsqlServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
         $this->callAfterResolving('db', fn (DatabaseManager $db) => $db->extend('dsql', function (array $config, string $name) {
-            // El conector usa sslmode=verify-full sin sslrootcert y libpq busca
-            // ~/.postgresql/root.crt. 'system' (libpq 17+) usa los root del SO;
-            // si libpq es mas vieja (p.ej. en Lambda) usar la ruta a un CA bundle.
+            // The connector uses sslmode=verify-full without sslrootcert, so libpq
+            // looks for ~/.postgresql/root.crt. 'system' (libpq 17+) uses the OS
+            // trust store; with an older libpq (e.g. on Lambda) use a CA bundle path.
             if (getenv('PGSSLROOTCERT') === false) {
                 putenv('PGSSLROOTCERT='.($config['sslrootcert'] ?? 'system'));
             }
 
-            // El SDK de PHP resuelve el perfil de forma confiable solo via
-            // AWS_PROFILE (el parametro profile del conector no alcanza con SSO).
-            // En Lambda dejarlo vacio: se usa el rol de ejecucion.
+            // The PHP SDK only resolves the profile reliably through AWS_PROFILE
+            // (the connector's profile option is not enough with SSO). Leave it
+            // empty on Lambda/EC2/ECS so the execution role is used.
             if (! empty($config['profile'])) {
                 putenv('AWS_PROFILE='.$config['profile']);
             }
@@ -42,9 +42,9 @@ class DsqlServiceProvider extends ServiceProvider
                 occMaxRetries: $config['occ_max_retries'] ?? 3,
             ));
 
-            // Sin 'name', Connection::getName() devuelve null y Eloquent
-            // (Builder::newModelInstance -> setConnection(null)) cae a la
-            // conexion por defecto al hacer Model::create().
+            // Without 'name', Connection::getName() returns null and Eloquent
+            // (Builder::newModelInstance -> setConnection(null)) falls back to
+            // the default connection on Model::create().
             $config['name'] = $name;
 
             return new DsqlConnection(

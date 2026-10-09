@@ -5,14 +5,15 @@ namespace JGamboa\LaravelAuroraDsql\Database;
 use Illuminate\Database\PostgresConnection;
 
 /**
- * Conexion para Aurora DSQL: PostgresConnection con el grammar de schema DSQL.
- * El PDO lo crea DsqlServiceProvider con el conector oficial (token IAM + SSL).
+ * Aurora DSQL connection: a PostgresConnection with the DSQL schema grammar.
+ * The PDO is created by DsqlServiceProvider using the official connector
+ * (IAM token + SSL).
  */
 class DsqlConnection extends PostgresConnection
 {
     public function getDriverName()
     {
-        // Internamente se comporta como Postgres (query grammar, processor).
+        // Behaves as Postgres internally (query grammar, processor).
         return 'pgsql';
     }
 
@@ -22,10 +23,10 @@ class DsqlConnection extends PostgresConnection
     }
 
     /**
-     * CREATE [UNIQUE] INDEX ASYNC devuelve un job_id y el indice no es valido
-     * hasta que el job termina. Por defecto se espera (CALL sys.wait_for_job)
-     * para que la migracion siguiente pueda depender del indice; se desactiva
-     * con 'wait_for_indexes' => false en la config de la conexion.
+     * CREATE [UNIQUE] INDEX ASYNC returns a job_id and the index is not valid
+     * until the job finishes. By default we wait for it (CALL sys.wait_for_job)
+     * so later migrations can rely on the index; disable it with
+     * 'wait_for_indexes' => false in the connection config.
      */
     public function statement($query, $bindings = [])
     {
