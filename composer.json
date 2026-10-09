@@ -1,0 +1,29 @@
+{
+    "name": "jgamboa/laravel-aurora-dsql",
+    "description": "Driver de Laravel para Amazon Aurora DSQL: conexión con token IAM, schema builder compatible (PK/FK inline, índices ASYNC, identity) y helpers de migración.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["laravel", "aurora", "dsql", "aws", "postgres"],
+    "authors": [{"name": "Joaquín Gamboa", "email": "joaquin.gamboaf@gmail.com"}],
+    "require": {
+        "php": "^8.2",
+        "illuminate/database": "^12.0|^13.0",
+        "illuminate/support": "^12.0|^13.0",
+        "awslabs/aurora-dsql-pdo-pgsql": "^0.1.1"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^10.0|^11.0",
+        "phpunit/phpunit": "^11.0|^12.0"
+    },
+    "autoload": {
+        "psr-4": {"JGamboa\\LaravelAuroraDsql\\": "src/"}
+    },
+    "autoload-dev": {
+        "psr-4": {"JGamboa\\LaravelAuroraDsql\\Tests\\": "tests/"}
+    },
+    "extra": {
+        "laravel": {"providers": ["JGamboa\\LaravelAuroraDsql\\DsqlServiceProvider"]}
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
