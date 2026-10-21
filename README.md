@@ -66,11 +66,16 @@ class Product extends Model
 }
 ```
 
-Transactions with retries on OCC conflicts (SQLSTATE 40001):
+## Optimistic concurrency
 
-```php
-DB::connection('dsql')->transaction(fn () => /* ... */, attempts: 3);
-```
+DSQL uses optimistic concurrency control: a conflicting write fails with SQLSTATE `40001` (OC000/OC001), frequently at `COMMIT`. This package retries those conflicts for you, with exponential backoff (base 50 ms, cap 1000 ms, jitter):
+
+- `DB::connection('dsql')->transaction(fn () => ...)` re-runs the whole closure, up to `occ_max_retries + 1` attempts (default 4). Passing `attempts:` explicitly overrides this. **The closure must be idempotent**: it can run several times, so avoid side effects such as sending emails or dispatching non-transactional jobs inside it.
+- Autocommit writes (`INSERT`/`UPDATE`/`DELETE` outside a transaction, e.g. Eloquent `save()`) are retried the same way.
+- Writes inside an open transaction are not retried individually: the conflict bubbles up to the outermost `transaction()` call, which retries the whole closure. Nested transactions do not retry on their own.
+- Other errors are never retried, and the original exception is rethrown once attempts are exhausted.
+
+Configure it per connection with `'occ_max_retries' => 3`.
 
 ## DSQL limitations (verified against a live cluster)
 
