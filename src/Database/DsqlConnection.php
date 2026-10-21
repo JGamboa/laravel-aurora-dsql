@@ -50,6 +50,12 @@ class DsqlConnection extends PostgresConnection
             try {
                 return parent::transaction($callback, 1);
             } catch (Throwable $e) {
+                // A failed COMMIT never reaches the transactions manager in
+                // Laravel, so the attempt's afterCommit callbacks would stay
+                // registered and fire on a later commit. Discard them here
+                // (level is 0: outer transactions cannot exist).
+                $this->transactionsManager?->rollback($this->getName(), $this->transactionLevel());
+
                 if ($attempt >= $attempts || ! $this->causedByConcurrencyError($e)) {
                     throw $e;
                 }

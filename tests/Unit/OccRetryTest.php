@@ -2,6 +2,7 @@
 
 namespace JGamboa\LaravelAuroraDsql\Tests\Unit;
 
+use Illuminate\Database\DatabaseTransactionsManager;
 use Illuminate\Database\QueryException;
 use JGamboa\LaravelAuroraDsql\Database\DsqlConnection;
 use Orchestra\Testbench\TestCase;
@@ -160,6 +161,91 @@ class OccRetryTest extends TestCase
         $this->assertCount(1, $this->sleeps);
         $this->assertSame(1, (int) $conn->selectOne('select count(*) as c from t')->c);
     }
+
+    private function commitFlakyConnection(int $commitFailures, int $retries = 3): array
+    {
+        $pdo = new FlakyPdo('sqlite::memory:');
+        $pdo->commitFailures = $commitFailures;
+        $conn = $this->dsqlOverSqlite(['occ_max_retries' => $retries], $pdo);
+        $conn->setTransactionManager(new DatabaseTransactionsManager);
+
+        return [$conn, $pdo];
+    }
+
+    #[Test]
+    public function after_commit_callback_runs_once_when_commit_conflicts_then_succeeds(): void
+    {
+        [$conn] = $this->commitFlakyConnection(1);
+        $ran = 0;
+
+        $conn->transaction(function () use ($conn, &$ran) {
+            $conn->afterCommit(function () use (&$ran) {
+                $ran++;
+            });
+        });
+
+        $this->assertSame(1, $ran);
+        $this->assertCount(1, $this->sleeps);
+    }
+
+    #[Test]
+    public function after_commit_callbacks_never_run_when_all_commit_attempts_fail(): void
+    {
+        [$conn, $pdo] = $this->commitFlakyConnection(99, 2);
+        $ran = 0;
+
+        try {
+            $conn->transaction(function () use ($conn, &$ran) {
+                $conn->afterCommit(function () use (&$ran) {
+                    $ran++;
+                });
+            });
+            $this->fail('Expected conflict');
+        } catch (PDOException $e) {
+            $this->assertSame('40001', $e->getCode());
+        }
+
+        $pdo->commitFailures = 0;
+        $conn->transaction(fn () => null);
+
+        $this->assertSame(0, $ran);
+    }
+
+    #[Test]
+    public function after_commit_callbacks_from_failed_closure_attempts_are_discarded(): void
+    {
+        [$conn] = $this->commitFlakyConnection(0);
+        $ran = [];
+        $calls = 0;
+
+        $conn->transaction(function () use ($conn, &$ran, &$calls) {
+            $n = ++$calls;
+            $conn->afterCommit(function () use (&$ran, $n) {
+                $ran[] = $n;
+            });
+            if ($n < 3) {
+                throw $this->occError();
+            }
+        });
+
+        $this->assertSame([3], $ran);
+
+        // All attempts fail: nothing runs, even after a later successful transaction.
+        $stale = 0;
+        try {
+            $conn->transaction(function () use ($conn, &$stale) {
+                $conn->afterCommit(function () use (&$stale) {
+                    $stale++;
+                });
+
+                throw $this->occError();
+            });
+        } catch (QueryException) {
+        }
+        $conn->transaction(fn () => null);
+
+        $this->assertSame(0, $stale);
+    }
 }
 
 /** PDO that fails the next prepare() calls to INSERT with a 40001 error. */
@@ -168,6 +254,22 @@ class FlakyPdo extends PDO
     public int $failures = 0;
 
     public int $prepared = 0;
+
+    public int $commitFailures = 0;
+
+    public function commit(): bool
+    {
+        if ($this->commitFailures > 0) {
+            $this->commitFailures--;
+            $this->rollBack();
+            $e = new PDOException('OC000: change conflicts with another transaction');
+            (new ReflectionProperty(PDOException::class, 'code'))->setValue($e, '40001');
+
+            throw $e;
+        }
+
+        return parent::commit();
+    }
 
     public function prepare(string $query, array $options = []): PDOStatement|false
     {
