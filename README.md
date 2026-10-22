@@ -11,6 +11,14 @@ Laravel (12+) database driver for **Amazon Aurora DSQL**.
   - `Schema::getTables()`, `db:show`, `db:wipe` and `migrate:fresh` work.
 - `DsqlMigration` base class for raw SQL migrations.
 
+
+### Nested transactions
+
+Aurora DSQL does not support `SAVEPOINT`, so the connection reports `supportsSavepoints() === false` and a
+nested `DB::transaction()` runs inside the outer transaction. An exception caught inside the nested
+closure does not undo that closure's writes; one that reaches the outermost transaction rolls back
+everything (and an OCC conflict retries the outermost closure).
+
 ## Installation
 
 ```bash
