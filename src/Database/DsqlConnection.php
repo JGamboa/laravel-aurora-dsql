@@ -115,6 +115,11 @@ class DsqlConnection extends PostgresConnection
         return 'pgsql';
     }
 
+    protected function getDefaultQueryGrammar()
+    {
+        return new DsqlQueryGrammar($this);
+    }
+
     protected function getDefaultSchemaGrammar()
     {
         return new DsqlSchemaGrammar($this);
