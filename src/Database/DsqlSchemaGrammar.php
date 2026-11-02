@@ -1,6 +1,6 @@
 <?php
 
-namespace JGamboa\LaravelAuroraDsql\Database;
+namespace Multiapi\LaravelAuroraDsql\Database;
 
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Schema\Grammars\PostgresGrammar;

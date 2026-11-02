@@ -1,8 +1,8 @@
 <?php
 
-namespace JGamboa\LaravelAuroraDsql\Tests\Unit;
+namespace Multiapi\LaravelAuroraDsql\Tests\Unit;
 
-use JGamboa\LaravelAuroraDsql\DsqlServiceProvider;
+use Multiapi\LaravelAuroraDsql\DsqlServiceProvider;
 use Orchestra\Testbench\TestCase;
 use PDO;
 use PDOStatement;

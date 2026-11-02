@@ -1,6 +1,6 @@
 <?php
 
-namespace JGamboa\LaravelAuroraDsql\Tests\Integration;
+namespace Multiapi\LaravelAuroraDsql\Tests\Integration;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +9,7 @@ use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
-use JGamboa\LaravelAuroraDsql\DsqlServiceProvider;
+use Multiapi\LaravelAuroraDsql\DsqlServiceProvider;
 use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 
