@@ -1,8 +1,13 @@
 {
-    "name": "jgamboa/laravel-aurora-dsql",
+    "name": "multiapi/laravel-aurora-dsql",
     "description": "Laravel driver for Amazon Aurora DSQL: IAM token auth, DSQL-compatible schema builder (inline PK/FK, ASYNC indexes, identity) and migration helpers.",
     "type": "library",
     "license": "MIT",
+    "homepage": "https://github.com/multi-api/laravel-aurora-dsql",
+    "support": {
+        "issues": "https://github.com/multi-api/laravel-aurora-dsql/issues",
+        "source": "https://github.com/multi-api/laravel-aurora-dsql"
+    },
     "keywords": ["laravel", "aurora", "dsql", "aws", "postgres"],
     "authors": [{"name": "Joaquín Gamboa", "email": "joaquin.gamboaf@gmail.com"}],
     "require": {
@@ -11,18 +16,22 @@
         "illuminate/support": "^12.0|^13.0",
         "awslabs/aurora-dsql-pdo-pgsql": "^0.1.1"
     },
+    "replace": {
+        "jgamboa/laravel-aurora-dsql": "self.version"
+    },
     "require-dev": {
         "orchestra/testbench": "^10.0|^11.0",
         "phpunit/phpunit": "^11.0|^12.0"
     },
     "autoload": {
-        "psr-4": {"JGamboa\\LaravelAuroraDsql\\": "src/"}
+        "psr-4": {"Multiapi\\LaravelAuroraDsql\\": "src/"},
+        "files": ["src/aliases.php"]
     },
     "autoload-dev": {
-        "psr-4": {"JGamboa\\LaravelAuroraDsql\\Tests\\": "tests/"}
+        "psr-4": {"Multiapi\\LaravelAuroraDsql\\Tests\\": "tests/"}
     },
     "extra": {
-        "laravel": {"providers": ["JGamboa\\LaravelAuroraDsql\\DsqlServiceProvider"]}
+        "laravel": {"providers": ["Multiapi\\LaravelAuroraDsql\\DsqlServiceProvider"]}
     },
     "minimum-stability": "stable",
     "prefer-stable": true

@@ -1,10 +1,10 @@
 <?php
 
-namespace JGamboa\LaravelAuroraDsql\Tests\Unit;
+namespace Multiapi\LaravelAuroraDsql\Tests\Unit;
 
 use Illuminate\Database\DatabaseTransactionsManager;
 use Illuminate\Database\QueryException;
-use JGamboa\LaravelAuroraDsql\Database\DsqlConnection;
+use Multiapi\LaravelAuroraDsql\Database\DsqlConnection;
 use Orchestra\Testbench\TestCase;
 use PDO;
 use PDOException;

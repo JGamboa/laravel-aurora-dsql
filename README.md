@@ -22,8 +22,13 @@ everything (and an OCC conflict retries the outermost closure).
 ## Installation
 
 ```bash
-composer require jgamboa/laravel-aurora-dsql
+composer require multiapi/laravel-aurora-dsql
 ```
+
+> Moved from `jgamboa/laravel-aurora-dsql` (now abandoned, versions up to v0.2.2 stay installable). To switch,
+> `composer remove jgamboa/laravel-aurora-dsql && composer require multiapi/laravel-aurora-dsql`. Since v0.3.0 the
+> classes live under `Multiapi\LaravelAuroraDsql`; the old `JGamboa\LaravelAuroraDsql` names keep working as
+> aliases until 1.0. The configuration is unchanged.
 
 The service provider is auto-discovered. Add a connection to `config/database.php`:
 

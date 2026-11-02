@@ -1,13 +1,13 @@
 <?php
 
-namespace JGamboa\LaravelAuroraDsql;
+namespace Multiapi\LaravelAuroraDsql;
 
 use Aws\AuroraDsql\PdoPgsql\AuroraDsql;
 use Aws\AuroraDsql\PdoPgsql\DsqlConfig;
 use Illuminate\Database\Concerns\ParsesSearchPath;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Support\ServiceProvider;
-use JGamboa\LaravelAuroraDsql\Database\DsqlConnection;
+use Multiapi\LaravelAuroraDsql\Database\DsqlConnection;
 use PDO;
 
 /**

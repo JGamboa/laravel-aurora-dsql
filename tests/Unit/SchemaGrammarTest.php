@@ -1,9 +1,9 @@
 <?php
 
-namespace JGamboa\LaravelAuroraDsql\Tests\Unit;
+namespace Multiapi\LaravelAuroraDsql\Tests\Unit;
 
 use Illuminate\Database\Schema\Blueprint;
-use JGamboa\LaravelAuroraDsql\Database\DsqlConnection;
+use Multiapi\LaravelAuroraDsql\Database\DsqlConnection;
 use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;

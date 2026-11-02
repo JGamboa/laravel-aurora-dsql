@@ -1,6 +1,6 @@
 <?php
 
-namespace JGamboa\LaravelAuroraDsql\Migrations;
+namespace Multiapi\LaravelAuroraDsql\Migrations;
 
 use Illuminate\Database\Connection;
 use Illuminate\Database\Migrations\Migration;
