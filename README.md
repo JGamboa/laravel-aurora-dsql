@@ -40,9 +40,13 @@ The service provider is auto-discovered. Add a connection to `config/database.ph
     'wait_for_indexes' => true,                 // wait for CREATE INDEX ASYNC jobs
     'prefix' => '',
     'prefix_indexes' => true,
-    'search_path' => 'public',
+    'search_path' => env('DSQL_SEARCH_PATH', 'public'),
 ],
 ```
+
+The driver applies `search_path` (or `schema`) to the session on connect, like Laravel's `pgsql` driver; leave both unset to keep the role's default `search_path`.
+
+On Aurora DSQL a non-admin role cannot create objects in `public` (`permission denied for schema public`, and `GRANT … ON SCHEMA public` fails with "feature not supported on system entity"). An app that connects with its own role therefore uses its own schema and sets `DSQL_SEARCH_PATH` to it. Arco Cloud sets it automatically for its managed databases.
 
 ## Usage
 

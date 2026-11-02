@@ -4,9 +4,11 @@ namespace JGamboa\LaravelAuroraDsql;
 
 use Aws\AuroraDsql\PdoPgsql\AuroraDsql;
 use Aws\AuroraDsql\PdoPgsql\DsqlConfig;
+use Illuminate\Database\Concerns\ParsesSearchPath;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Support\ServiceProvider;
 use JGamboa\LaravelAuroraDsql\Database\DsqlConnection;
+use PDO;
 
 /**
  * Registers the "dsql" database driver.
@@ -16,6 +18,8 @@ use JGamboa\LaravelAuroraDsql\Database\DsqlConnection;
  */
 class DsqlServiceProvider extends ServiceProvider
 {
+    use ParsesSearchPath;
+
     public function register(): void
     {
         $this->callAfterResolving('db', fn (DatabaseManager $db) => $db->extend('dsql', function (array $config, string $name) {
@@ -42,6 +46,8 @@ class DsqlServiceProvider extends ServiceProvider
                 occMaxRetries: $config['occ_max_retries'] ?? 3,
             ));
 
+            $this->configureSearchPath($pdo, $config);
+
             // Without 'name', Connection::getName() returns null and Eloquent
             // (Builder::newModelInstance -> setConnection(null)) falls back to
             // the default connection on Model::create().
@@ -54,5 +60,22 @@ class DsqlServiceProvider extends ServiceProvider
                 $config
             );
         }));
+    }
+
+    /**
+     * Apply the configured 'search_path' (or 'schema') to the session, as
+     * Laravel's PostgresConnector does. The AWS connector does not, so without
+     * this the role's default search_path would be used while the schema
+     * builder (hasTable, migrations) looks in the configured one.
+     */
+    public function configureSearchPath(PDO $pdo, array $config): void
+    {
+        if (! isset($config['search_path']) && ! isset($config['schema'])) {
+            return;
+        }
+
+        $searchPath = $this->parseSearchPath($config['search_path'] ?? $config['schema']);
+
+        $pdo->prepare('set search_path to "'.implode('", "', $searchPath).'"')->execute();
     }
 }
