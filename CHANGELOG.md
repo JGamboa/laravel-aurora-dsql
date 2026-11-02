@@ -3,7 +3,7 @@
 All notable changes to this package are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the package uses [Semantic Versioning](https://semver.org/).
 
-## [0.3.0] - Unreleased
+## [0.3.0] - 2026-11-02
 
 ### Changed
 - The package moved to the Multiapi organization: Composer name `multiapi/laravel-aurora-dsql`,
