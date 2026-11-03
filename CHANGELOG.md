@@ -3,6 +3,12 @@
 All notable changes to this package are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the package uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Documentation
+- Under FrankenPHP workers the `putenv('PGSSLROOTCERT=…')` fallback does not reach libpq: the README says to set
+  `PGSSLROOTCERT` as a real environment variable there.
+
 ## [0.3.0] - 2026-11-02
 
 ### Changed
