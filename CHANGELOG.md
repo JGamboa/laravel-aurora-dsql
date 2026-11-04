@@ -3,6 +3,17 @@
 All notable changes to this package are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the package uses [Semantic Versioning](https://semver.org/).
 
+## [0.3.1] - Unreleased
+
+### Fixed
+- A transaction can run more than one statement. pdo_pgsql built against libpq 17+ closes each server-side
+  prepared statement with a protocol Close message that Aurora DSQL rejects, which aborted the transaction: the
+  second statement failed with SQLSTATE `25P02` ("current transaction is aborted"). Every `dsql` connection now
+  uses emulated prepares (`PDO::ATTR_EMULATE_PREPARES`), and the attribute is recorded in the connection's
+  `options`.
+- With emulated prepares, booleans are bound as `'true'`/`'false'` instead of `1`/`0`, which DSQL would reject for
+  a boolean column.
+
 ## [0.3.0] - 2026-11-02
 
 ### Changed
@@ -47,6 +58,7 @@ All notable changes to this package are documented here. The format follows
 - Initial release: IAM token auth, DSQL-compatible schema builder (inline PK/FK, `ASYNC` indexes, identity)
   and migration helpers.
 
+[0.3.1]: https://github.com/multi-api/laravel-aurora-dsql/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/multi-api/laravel-aurora-dsql/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/multi-api/laravel-aurora-dsql/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/multi-api/laravel-aurora-dsql/compare/v0.2.0...v0.2.1

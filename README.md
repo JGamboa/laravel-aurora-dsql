@@ -109,6 +109,13 @@ Configure it per connection with `'occ_max_retries' => 3`.
 
 Supported: `lockForUpdate`, `upsert` (needs a unique index), JSON/JSONB, CTEs, window functions, views, sequences, `language sql` functions.
 
+### Prepared statements
+
+Every `dsql` connection uses emulated prepares (`PDO::ATTR_EMULATE_PREPARES`, since v0.3.1): pdo_pgsql built against
+libpq 17+ closes server-side prepared statements with a protocol message that DSQL rejects, which aborted the
+transaction after its first statement (SQLSTATE `25P02`). Bindings are escaped by PDO and booleans are sent as
+`true`/`false`; nothing changes in application code.
+
 Operational notes: connections last at most 60 minutes (long-running processes must reconnect); the IAM token is signed locally (no network call).
 
 ## Testing

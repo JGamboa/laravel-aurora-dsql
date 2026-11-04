@@ -44,14 +44,11 @@ class DsqlServiceProvider extends ServiceProvider
                 database: $config['database'] ?? 'postgres',
                 profile: $config['profile'] ?? null,
                 occMaxRetries: $config['occ_max_retries'] ?? 3,
-            ));
+            ), $this->pdoAttributes());
 
             $this->configureSearchPath($pdo, $config);
 
-            // Without 'name', Connection::getName() returns null and Eloquent
-            // (Builder::newModelInstance -> setConnection(null)) falls back to
-            // the default connection on Model::create().
-            $config['name'] = $name;
+            $config = $this->connectionConfig($config, $name);
 
             return new DsqlConnection(
                 $pdo,
@@ -60,6 +57,41 @@ class DsqlServiceProvider extends ServiceProvider
                 $config
             );
         }));
+    }
+
+    /**
+     * The config the DsqlConnection is built with.
+     */
+    public function connectionConfig(array $config, string $name): array
+    {
+        // Without 'name', Connection::getName() returns null and Eloquent
+        // (Builder::newModelInstance -> setConnection(null)) falls back to
+        // the default connection on Model::create().
+        $config['name'] = $name;
+
+        // Record the PDO attributes in 'options' too: Laravel's
+        // PostgresConnection reads ATTR_EMULATE_PREPARES from there.
+        $config['options'] = $this->pdoAttributes() + ($config['options'] ?? []);
+
+        return $config;
+    }
+
+    /**
+     * PDO attributes for every DSQL connection.
+     *
+     * Emulated prepares: pdo_pgsql built against libpq 17+ closes each
+     * server-side prepared statement with a protocol Close message, which
+     * Aurora DSQL rejects. Inside a transaction that error aborts it, so the
+     * second statement fails with SQLSTATE 25P02 ("current transaction is
+     * aborted"). With emulated prepares no server-side statements are created.
+     * Values are then sent as SQL literals, so DsqlConnection binds booleans
+     * as 'true'/'false' instead of 1/0.
+     *
+     * @return array<int, mixed>
+     */
+    public function pdoAttributes(): array
+    {
+        return [PDO::ATTR_EMULATE_PREPARES => true];
     }
 
     /**
