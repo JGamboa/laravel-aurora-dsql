@@ -117,4 +117,16 @@ class SchemaBuilderTest extends TestCase
             $this->assertSame(0, ItProduct::count());
         }
     }
+
+    #[Test]
+    public function a_transaction_runs_more_than_one_statement(): void
+    {
+        $results = DB::connection('dsql')->transaction(fn () => [
+            DB::connection('dsql')->selectOne('select ? as n', [1])->n,
+            DB::connection('dsql')->selectOne('select ? as b', [true])->b,
+            DB::connection('dsql')->selectOne('select 3 as n')->n,
+        ]);
+
+        $this->assertSame([1, true, 3], array_map(fn ($v) => is_string($v) ? (int) $v : $v, $results));
+    }
 }

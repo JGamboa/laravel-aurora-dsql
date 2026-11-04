@@ -109,6 +109,25 @@ class DsqlConnection extends PostgresConnection
         }
     }
 
+    /**
+     * DSQL connections always use emulated prepares (see
+     * DsqlServiceProvider::pdoAttributes()), so values reach the server as SQL
+     * literals. A boolean must be the literal 'true'/'false': an integer 1/0
+     * fails against a boolean column ("is of type boolean but expression is of
+     * type integer"). Newer Laravel versions do this when 'options' enables
+     * emulated prepares; this keeps it independent of the Laravel version.
+     */
+    public function prepareBindings(array $bindings)
+    {
+        foreach ($bindings as $key => $value) {
+            if (is_bool($value)) {
+                $bindings[$key] = $value ? 'true' : 'false';
+            }
+        }
+
+        return parent::prepareBindings($bindings);
+    }
+
     public function getDriverName()
     {
         // Behaves as Postgres internally (query grammar, processor).
