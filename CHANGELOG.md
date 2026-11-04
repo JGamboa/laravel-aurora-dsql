@@ -3,7 +3,7 @@
 All notable changes to this package are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the package uses [Semantic Versioning](https://semver.org/).
 
-## [0.3.1] - Unreleased
+## [0.3.1] - 2026-11-04
 
 ### Fixed
 - A transaction can run more than one statement. pdo_pgsql built against libpq 17+ closes each server-side
