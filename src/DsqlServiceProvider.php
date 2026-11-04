@@ -26,6 +26,8 @@ class DsqlServiceProvider extends ServiceProvider
             // The connector uses sslmode=verify-full without sslrootcert, so libpq
             // looks for ~/.postgresql/root.crt. 'system' (libpq 17+) uses the OS
             // trust store; with an older libpq (e.g. on Lambda) use a CA bundle path.
+            // putenv() does not reach libpq inside FrankenPHP workers: there PGSSLROOTCERT must be a real
+            // environment variable of the process (see the README).
             if (getenv('PGSSLROOTCERT') === false) {
                 putenv('PGSSLROOTCERT='.($config['sslrootcert'] ?? 'system'));
             }

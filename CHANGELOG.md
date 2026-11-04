@@ -14,6 +14,10 @@ All notable changes to this package are documented here. The format follows
 - With emulated prepares, booleans are bound as `'true'`/`'false'` instead of `1`/`0`, which DSQL would reject for
   a boolean column.
 
+### Documentation
+- Under FrankenPHP workers the `putenv('PGSSLROOTCERT=…')` fallback does not reach libpq: the README says to set
+  `PGSSLROOTCERT` as a real environment variable there.
+
 ## [0.3.0] - 2026-11-02
 
 ### Changed

@@ -49,6 +49,13 @@ The service provider is auto-discovered. Add a connection to `config/database.ph
 ],
 ```
 
+**The CA setting.** The AWS connector always connects with `sslmode=verify-full` and takes no `sslrootcert`, so libpq
+reads `PGSSLROOTCERT` from the process environment. The driver sets it from `sslrootcert` with `putenv()` when it is
+not set, which works under PHP-FPM and the CLI but **does not reach libpq inside FrankenPHP workers** (Laravel Octane
+with FrankenPHP, or a FrankenPHP-based Lambda runtime): there the connection fails with
+`root certificate file "…/.postgresql/root.crt" does not exist`. Set `PGSSLROOTCERT=system` (or a CA bundle path) as a
+real environment variable of the process instead. Arco Cloud sends it with its managed databases.
+
 The driver applies `search_path` (or `schema`) to the session on connect, like Laravel's `pgsql` driver; leave both unset to keep the role's default `search_path`.
 
 On Aurora DSQL a non-admin role cannot create objects in `public` (`permission denied for schema public`, and `GRANT … ON SCHEMA public` fails with "feature not supported on system entity"). An app that connects with its own role therefore uses its own schema and sets `DSQL_SEARCH_PATH` to it. Arco Cloud sets it automatically for its managed databases.
